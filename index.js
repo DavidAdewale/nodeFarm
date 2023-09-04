@@ -2,6 +2,7 @@
 const fs = require('fs');
 const http = require('http');
 const url = require('url');
+const slugify = require('slugify');
 
 const replaceTemplate = require('./modules/replaceTemplate');
 ///////////////////////////////////////////////////////////////////////////
@@ -50,11 +51,15 @@ const tempCard = fs.readFileSync(
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dataObj = JSON.parse(data);
 
+const slugs = dataObj.map((el) => slugify(el.productName, { lower: true }));
+
 const server = http.createServer((req, res) => {
-  const { query, pathname } = url.parse(req.url, true);
+  const { pathname } = url.parse(req.url, true);
+  const pathName = '/' + pathname.split('/').at(1);
+  const slug = pathname.split('/').at(2);
 
   //Overview page
-  if (pathname === '/' || pathname === '/overview') {
+  if (pathName === '/' || pathName === '/overview') {
     res.writeHead(200, { 'Content-type': 'text/html' });
 
     const cardsHtml = dataObj
@@ -65,15 +70,15 @@ const server = http.createServer((req, res) => {
     res.end(output);
 
     //Product page
-  } else if (pathname === '/product') {
+  } else if (pathName === '/product') {
     res.writeHead(200, { 'Content-type': 'text/html' });
-
-    const product = dataObj.at(query.id);
+    // const product = dataObj.at(query.id);
+    const product = dataObj.find((el) => el.slug === slug);
     const output = replaceTemplate(tempProduct, product);
     res.end(output);
 
     //API
-  } else if (pathname === '/api') {
+  } else if (pathName === '/api') {
     res.writeHead(200, { 'Content-type': 'application/json' });
     res.end(data);
 
